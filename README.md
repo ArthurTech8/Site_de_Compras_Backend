@@ -1,13 +1,12 @@
-# Backend — Site de Compras
+# Site de compras - backend
 
-API REST em **ASP.NET Core 8** com **EF Core** (SQLite em desenvolvimento).
+API REST em **ASP.NET Core 8** com **EF Core** (SQLite em desenvolvimento) para o [site de compras](https://github.com/ArthurTech8/site_de_compras).
 
 ## Como rodar
 
 Requer o [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ```bash
-cd backend
 dotnet run --project src/SiteDeCompras.Api
 ```
 
