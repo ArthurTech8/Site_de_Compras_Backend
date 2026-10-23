@@ -55,7 +55,8 @@ public record SalvarProdutoRequest
     [StringLength(2000)]
     public string? Descricao { get; init; }
 
-    [Range(typeof(decimal), "0.01", "9999999")]
+    // Limites lidos em cultura invariante: num Windows em pt-BR, "0.01" não seria entendido.
+    [Range(typeof(decimal), "0.01", "9999999", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     public decimal Preco { get; init; }
 
     [StringLength(500)]
@@ -65,6 +66,6 @@ public record SalvarProdutoRequest
     public int Estoque { get; init; }
 
     /// <summary>Desconto (%) no pagamento via Pix, de 5 a 15.</summary>
-    [Range(typeof(decimal), "5", "15")]
+    [Range(typeof(decimal), "5", "15", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     public decimal DescontoPix { get; init; } = Produto.DescontoPixMinimo;
 }

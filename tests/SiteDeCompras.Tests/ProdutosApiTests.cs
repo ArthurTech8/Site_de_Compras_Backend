@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using SiteDeCompras.Application.Common;
@@ -85,6 +87,28 @@ public class ProdutosApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
             new SalvarProdutoRequest { Nome = "Teste", Preco = 10, Estoque = 1, ImagemUrl = url });
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, resposta.StatusCode);
+    }
+
+    [Fact]
+    public void Validacao_de_preco_funciona_com_o_sistema_em_portugues()
+    {
+        // Com vírgula decimal, "0.01" nos limites do [Range] não era lido e a API respondia 500.
+        var cultura = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("pt-BR");
+        try
+        {
+            var valido = new SalvarProdutoRequest { Nome = "Garrafa", Preco = 39.90m, Estoque = 2, DescontoPix = 7.5m };
+            var invalido = valido with { Preco = 0, DescontoPix = 20 };
+
+            Assert.True(Validator.TryValidateObject(valido, new ValidationContext(valido), null, true));
+            var erros = new List<ValidationResult>();
+            Assert.False(Validator.TryValidateObject(invalido, new ValidationContext(invalido), erros, true));
+            Assert.Equal(2, erros.Count);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = cultura;
+        }
     }
 
     [Fact]
