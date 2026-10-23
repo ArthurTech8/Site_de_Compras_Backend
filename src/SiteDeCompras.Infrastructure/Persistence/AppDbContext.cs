@@ -4,6 +4,7 @@ using SiteDeCompras.Application.Common;
 using SiteDeCompras.Domain.Carrinhos;
 using SiteDeCompras.Domain.Pedidos;
 using SiteDeCompras.Domain.Produtos;
+using SiteDeCompras.Domain.Usuarios;
 
 namespace SiteDeCompras.Infrastructure.Persistence;
 
@@ -12,6 +13,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Produto> Produtos => Set<Produto>();
     public DbSet<Carrinho> Carrinhos => Set<Carrinho>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

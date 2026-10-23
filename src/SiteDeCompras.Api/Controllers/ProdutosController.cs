@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SiteDeCompras.Application.Common;
 using SiteDeCompras.Application.Produtos;
+using SiteDeCompras.Domain.Usuarios;
 
 namespace SiteDeCompras.Api.Controllers;
 
@@ -21,6 +23,9 @@ public class ProdutosController(ProdutoService service) : ControllerBase
     public Task<ProdutoDto> Obter(int id, CancellationToken ct) => service.ObterAsync(id, ct);
 
     [HttpPost]
+    [Authorize(Roles = nameof(PapelUsuario.Admin))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ProdutoDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProdutoDto>> Criar(SalvarProdutoRequest req, CancellationToken ct)
@@ -30,6 +35,9 @@ public class ProdutosController(ProdutoService service) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = nameof(PapelUsuario.Admin))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ProdutoDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +46,9 @@ public class ProdutosController(ProdutoService service) : ControllerBase
 
     /// <summary>Desativa o produto (exclusão lógica).</summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = nameof(PapelUsuario.Admin))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Remover(int id, CancellationToken ct)

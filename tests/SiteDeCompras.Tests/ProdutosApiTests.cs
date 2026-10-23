@@ -49,27 +49,42 @@ public class ProdutosApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     [Fact]
     public async Task Cria_atualiza_e_remove_produto()
     {
-        var criar = await _client.PostAsJsonAsync("/api/v1/produtos",
+        var admin = await factory.ClienteAdminAsync();
+        var criar = await admin.PostAsJsonAsync("/api/v1/produtos",
             new SalvarProdutoRequest { Nome = "Fone Bluetooth", Preco = 199.90m, Estoque = 3 });
         Assert.Equal(HttpStatusCode.Created, criar.StatusCode);
         var produto = await criar.Content.ReadFromJsonAsync<ProdutoDto>();
         Assert.NotNull(produto);
         Assert.Equal($"/api/v1/produtos/{produto.Id}", criar.Headers.Location?.AbsolutePath);
 
-        var atualizar = await _client.PutAsJsonAsync($"/api/v1/produtos/{produto.Id}",
+        var atualizar = await admin.PutAsJsonAsync($"/api/v1/produtos/{produto.Id}",
             new SalvarProdutoRequest { Nome = "Fone Bluetooth", Preco = 149.90m, Estoque = 3 });
         Assert.Equal(149.90m, (await atualizar.Content.ReadFromJsonAsync<ProdutoDto>())!.Preco);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await _client.DeleteAsync($"/api/v1/produtos/{produto.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteAsync($"/api/v1/produtos/{produto.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/api/v1/produtos/{produto.Id}")).StatusCode);
     }
 
     [Fact]
     public async Task Produto_invalido_retorna_400()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/v1/produtos", new SalvarProdutoRequest { Nome = "", Preco = 0 });
+        var admin = await factory.ClienteAdminAsync();
+        var resposta = await admin.PostAsJsonAsync("/api/v1/produtos", new SalvarProdutoRequest { Nome = "", Preco = 0 });
 
         Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("//site-malicioso.com/x.png")]
+    [InlineData("data:image/svg+xml,<svg onload=alert(1)>")]
+    public async Task Imagem_com_protocolo_perigoso_retorna_422(string url)
+    {
+        var admin = await factory.ClienteAdminAsync();
+        var resposta = await admin.PostAsJsonAsync("/api/v1/produtos",
+            new SalvarProdutoRequest { Nome = "Teste", Preco = 10, Estoque = 1, ImagemUrl = url });
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, resposta.StatusCode);
     }
 
     [Fact]

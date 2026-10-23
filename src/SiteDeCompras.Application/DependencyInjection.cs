@@ -1,8 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SiteDeCompras.Application.Carrinhos;
 using SiteDeCompras.Application.Pagamentos;
 using SiteDeCompras.Application.Pedidos;
 using SiteDeCompras.Application.Produtos;
+using SiteDeCompras.Application.Usuarios;
 
 namespace SiteDeCompras.Application;
 
@@ -15,6 +17,8 @@ public static class DependencyInjection
         services.AddScoped<CarrinhoService>();
         services.AddScoped<PagamentoService>();
         services.AddScoped<PedidoService>();
+        services.AddScoped<AuthService>();
+        services.TryAddSingleton(TimeProvider.System);
         return services;
     }
 }

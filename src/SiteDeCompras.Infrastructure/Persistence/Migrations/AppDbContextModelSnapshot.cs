@@ -121,9 +121,14 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CriadoEm");
+
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Pedidos", (string)null);
                 });
@@ -250,6 +255,67 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Usuarios.Usuario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AtualizadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("BloqueadoAte")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CarimboSeguranca")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmailNormalizado")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FalhasLogin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Papel")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SenhaHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UltimoLoginEm")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailNormalizado")
+                        .IsUnique();
+
+                    b.HasIndex("Papel");
+
+                    b.ToTable("Usuarios", (string)null);
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Carrinhos.ItemCarrinho", b =>
                 {
                     b.HasOne("SiteDeCompras.Domain.Carrinhos.Carrinho", null)
@@ -282,6 +348,11 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.Pedido", b =>
                 {
+                    b.HasOne("SiteDeCompras.Domain.Usuarios.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsOne("SiteDeCompras.Domain.Pagamentos.CondicaoPagamento", "Pagamento", b1 =>
                         {
                             b1.Property<Guid>("PedidoId")
