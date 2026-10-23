@@ -37,7 +37,7 @@ public class Pedido
             Pagamento = pagamento,
         };
 
-        foreach (var item in carrinho.Itens)
+        foreach (var item in carrinho.Itens.OrderBy(i => i.Id))
         {
             var produto = produtos.FirstOrDefault(p => p.Id == item.ProdutoId)
                 ?? throw new DomainException($"O produto '{item.NomeProduto}' não está disponível.");
