@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SiteDeCompras.Application.Carrinhos;
 using SiteDeCompras.Application.Common;
+using SiteDeCompras.Application.Pedidos;
 using SiteDeCompras.Application.Produtos;
 using SiteDeCompras.Infrastructure.Persistence;
 using SiteDeCompras.Infrastructure.Repositories;
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IProdutoRepository, ProdutoRepository>();
         services.AddScoped<ICarrinhoRepository, CarrinhoRepository>();
+        services.AddScoped<IPedidoRepository, PedidoRepository>();
         return services;
     }
 }

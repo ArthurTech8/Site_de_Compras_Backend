@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using SiteDeCompras.Api.Infrastructure;
 using SiteDeCompras.Application;
+using SiteDeCompras.Application.Pagamentos;
 using SiteDeCompras.Infrastructure;
 using SiteDeCompras.Infrastructure.Persistence;
 
@@ -25,7 +26,8 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(policy => policy
     .AllowAnyHeader()
     .AllowAnyMethod()));
 
-builder.Services.AddApplication();
+builder.Services.AddApplication(
+    builder.Configuration.GetSection("Pagamento").Get<ConfiguracaoPagamento>());
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();

@@ -6,6 +6,7 @@ namespace SiteDeCompras.Application.Produtos;
 public interface IProdutoRepository
 {
     Task<Produto?> ObterPorIdAsync(int id, CancellationToken ct = default);
+    Task<IReadOnlyList<Produto>> ListarPorIdsAsync(IEnumerable<int> ids, CancellationToken ct = default);
     Task<PagedResult<Produto>> ListarAsync(ProdutoFiltro filtro, CancellationToken ct = default);
     void Adicionar(Produto produto);
 }

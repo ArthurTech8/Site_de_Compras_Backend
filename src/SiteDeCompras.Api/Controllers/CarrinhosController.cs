@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SiteDeCompras.Application.Carrinhos;
+using SiteDeCompras.Application.Pagamentos;
 
 namespace SiteDeCompras.Api.Controllers;
 
@@ -57,4 +58,15 @@ public class CarrinhosController(CarrinhoService service) : ControllerBase
     [ProducesResponseType<CarrinhoDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<CarrinhoDto> Limpar(Guid id, CancellationToken ct) => service.LimparAsync(id, ct);
+
+    /// <summary>
+    /// Formas de pagamento calculadas sobre o total do carrinho: Pix com o maior desconto entre os
+    /// produtos, débito sem alteração e crédito de 6 a 16 parcelas com juros.
+    /// </summary>
+    [HttpGet("{id:guid}/pagamento")]
+    [ProducesResponseType<OpcoesPagamentoDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public Task<OpcoesPagamentoDto> OpcoesPagamento(Guid id, [FromServices] PagamentoService pagamentos, CancellationToken ct) =>
+        pagamentos.ObterOpcoesAsync(id, ct);
 }

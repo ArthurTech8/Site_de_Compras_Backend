@@ -48,10 +48,29 @@ o banco ou expor outra interface (fila, gRPC) não mexe nas regras de negócio.
 | PUT | `/api/v1/carrinhos/{id}/itens/{produtoId}` | Altera a quantidade `{ quantidade }` |
 | DELETE | `/api/v1/carrinhos/{id}/itens/{produtoId}` | Remove o item |
 | DELETE | `/api/v1/carrinhos/{id}/itens` | Esvazia o carrinho |
+| GET | `/api/v1/carrinhos/{id}/pagamento` | Formas de pagamento calculadas sobre o total do carrinho (Pix, débito e crédito de 6x a 16x) |
+| POST | `/api/v1/pedidos` | Finaliza o carrinho `{ carrinhoId, formaPagamento, parcelas }` com pagamento simulado |
+| GET | `/api/v1/pedidos/{id}` | Detalhe do pedido com a condição de pagamento |
 | GET | `/health` | Health check (inclui o banco) |
 
 Erros seguem o padrão **ProblemDetails** (`application/problem+json`):
 `400` validação, `404` recurso inexistente, `422` regra de negócio (ex.: estoque insuficiente).
+
+## Pagamento (simulado)
+
+Não há gateway: os valores são calculados no servidor a partir do carrinho e o pedido é aprovado na hora.
+O cliente só escolhe a forma de pagamento e, no crédito, o número de parcelas.
+
+- **Pix**: cada produto tem um desconto próprio entre 5% e 15% (`descontoPix`). Os descontos não se somam:
+  vale o maior entre os produtos do carrinho, aplicado uma vez sobre o total.
+- **Débito**: o total do carrinho, sem desconto nem juros.
+- **Crédito**: de 6 a 16 parcelas fixas com juros compostos pela Tabela Price. A taxa padrão é
+  **2,99% ao mês** (`Pagamento:TaxaJurosMensalCredito` no `appsettings.json`), dentro da faixa que o
+  varejo online costuma cobrar no parcelado com juros. A resposta traz o valor de cada parcela, o total
+  e quanto ele fica acima do total do carrinho.
+
+Ao finalizar, o pedido guarda uma cópia dos itens e da condição de pagamento, o estoque é baixado e o
+carrinho é esvaziado.
 
 ## Migrations
 

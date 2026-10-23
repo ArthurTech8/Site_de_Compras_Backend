@@ -71,6 +71,63 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                     b.ToTable("ItensCarrinho", (string)null);
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.ItemPedido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ImagemUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NomeProduto")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("PrecoUnitario")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.HasIndex("ProdutoId");
+
+                    b.ToTable("ItensPedido", (string)null);
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.Pedido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CriadoEm");
+
+                    b.ToTable("Pedidos", (string)null);
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Produtos.Produto", b =>
                 {
                     b.Property<int>("Id")
@@ -85,6 +142,10 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("TEXT");
+
+                    b.Property<double>("DescontoPix")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("REAL");
 
                     b.Property<string>("Descricao")
                         .HasMaxLength(2000)
@@ -121,6 +182,7 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DescontoPix = 10.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/Geladeira.webp",
                             Nome = "Geladeira",
@@ -132,6 +194,7 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DescontoPix = 8.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/sofa3lugares.webp",
                             Nome = "Sofá 3 lugares",
@@ -143,6 +206,7 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DescontoPix = 12.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/celularxaiomi.webp",
                             Nome = "Celular Xiaomi",
@@ -154,6 +218,7 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DescontoPix = 15.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/notebook.webp",
                             Nome = "Notebook",
@@ -165,6 +230,7 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DescontoPix = 5.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/caneca.webp",
                             Nome = "Caneca",
@@ -176,6 +242,7 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DescontoPix = 7.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/ps4.webp",
                             Nome = "Playstation 4",
@@ -198,7 +265,82 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.ItemPedido", b =>
+                {
+                    b.HasOne("SiteDeCompras.Domain.Pedidos.Pedido", null)
+                        .WithMany("Itens")
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SiteDeCompras.Domain.Produtos.Produto", null)
+                        .WithMany()
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.Pedido", b =>
+                {
+                    b.OwnsOne("SiteDeCompras.Domain.Pagamentos.CondicaoPagamento", "Pagamento", b1 =>
+                        {
+                            b1.Property<Guid>("PedidoId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<double>("Desconto")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("REAL");
+
+                            b1.Property<double>("DescontoPercentual")
+                                .HasPrecision(5, 2)
+                                .HasColumnType("REAL");
+
+                            b1.Property<string>("Forma")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<double>("Juros")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("REAL");
+
+                            b1.Property<int>("Parcelas")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<double>("Subtotal")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("REAL");
+
+                            b1.Property<double>("TaxaJurosMensal")
+                                .HasPrecision(9, 6)
+                                .HasColumnType("REAL");
+
+                            b1.Property<double>("Total")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("REAL");
+
+                            b1.Property<double>("ValorParcela")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("REAL");
+
+                            b1.HasKey("PedidoId");
+
+                            b1.ToTable("Pedidos");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PedidoId");
+                        });
+
+                    b.Navigation("Pagamento")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Carrinhos.Carrinho", b =>
+                {
+                    b.Navigation("Itens");
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.Pedido", b =>
                 {
                     b.Navigation("Itens");
                 });

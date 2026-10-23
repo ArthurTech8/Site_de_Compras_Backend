@@ -10,11 +10,12 @@ public record ProdutoDto(
     decimal Preco,
     string? ImagemUrl,
     int Estoque,
+    decimal DescontoPix,
     DateTime CriadoEm,
     DateTime AtualizadoEm)
 {
     public static ProdutoDto De(Produto p) =>
-        new(p.Id, p.Nome, p.Descricao, p.Preco, p.ImagemUrl, p.Estoque, p.CriadoEm, p.AtualizadoEm);
+        new(p.Id, p.Nome, p.Descricao, p.Preco, p.ImagemUrl, p.Estoque, p.DescontoPix, p.CriadoEm, p.AtualizadoEm);
 }
 
 public enum OrdenacaoProduto
@@ -62,4 +63,8 @@ public record SalvarProdutoRequest
 
     [Range(0, int.MaxValue)]
     public int Estoque { get; init; }
+
+    /// <summary>Desconto (%) no pagamento via Pix, de 5 a 15.</summary>
+    [Range(typeof(decimal), "5", "15")]
+    public decimal DescontoPix { get; init; } = Produto.DescontoPixMinimo;
 }
