@@ -14,6 +14,7 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.Property(p => p.Descricao).HasMaxLength(2000);
         builder.Property(p => p.Preco).HasPrecision(18, 2);
         builder.Property(p => p.ImagemUrl).HasMaxLength(500);
+        builder.Property(p => p.DescontoPix).HasPrecision(5, 2);
         builder.HasIndex(p => p.Nome);
         builder.HasIndex(p => p.Ativo);
 

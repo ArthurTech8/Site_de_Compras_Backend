@@ -17,7 +17,7 @@ public class ProdutoService(IProdutoRepository produtos, IUnitOfWork uow)
 
     public async Task<ProdutoDto> CriarAsync(SalvarProdutoRequest req, CancellationToken ct = default)
     {
-        var produto = new Produto(req.Nome, req.Preco, req.Estoque, req.Descricao, req.ImagemUrl);
+        var produto = new Produto(req.Nome, req.Preco, req.Estoque, req.Descricao, req.ImagemUrl, req.DescontoPix);
         produtos.Adicionar(produto);
         await uow.SalvarAsync(ct);
         return ProdutoDto.De(produto);
@@ -26,7 +26,7 @@ public class ProdutoService(IProdutoRepository produtos, IUnitOfWork uow)
     public async Task<ProdutoDto> AtualizarAsync(int id, SalvarProdutoRequest req, CancellationToken ct = default)
     {
         var produto = await ObterAtivoAsync(id, ct);
-        produto.Atualizar(req.Nome, req.Preco, req.Estoque, req.Descricao, req.ImagemUrl);
+        produto.Atualizar(req.Nome, req.Preco, req.Estoque, req.Descricao, req.ImagemUrl, req.DescontoPix);
         await uow.SalvarAsync(ct);
         return ProdutoDto.De(produto);
     }

@@ -11,6 +11,12 @@ public class ProdutoRepository(AppDbContext db) : IProdutoRepository
     public Task<Produto?> ObterPorIdAsync(int id, CancellationToken ct = default) =>
         db.Produtos.FirstOrDefaultAsync(p => p.Id == id, ct);
 
+    public async Task<IReadOnlyList<Produto>> ListarPorIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+    {
+        var lista = ids.Distinct().ToList();
+        return await db.Produtos.Where(p => lista.Contains(p.Id)).ToListAsync(ct);
+    }
+
     public async Task<PagedResult<Produto>> ListarAsync(ProdutoFiltro filtro, CancellationToken ct = default)
     {
         var query = db.Produtos.AsNoTracking().Where(p => p.Ativo);
