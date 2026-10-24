@@ -5,5 +5,6 @@ namespace SiteDeCompras.Application.Pedidos;
 public interface IPedidoRepository
 {
     Task<Pedido?> ObterPorIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<Pedido>> ListarDoUsuarioAsync(Guid usuarioId, CancellationToken ct = default);
     void Adicionar(Pedido pedido);
 }

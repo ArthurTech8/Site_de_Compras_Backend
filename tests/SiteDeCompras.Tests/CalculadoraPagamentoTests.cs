@@ -74,7 +74,7 @@ public class CalculadoraPagamentoTests
         var carrinho = new Carrinho();
         carrinho.AdicionarItem(produto, 2);
 
-        var pedido = Pedido.Fechar(carrinho, [produto], CalculadoraPagamento.Debito(carrinho.Total));
+        var pedido = Pedido.Fechar(carrinho, [produto], CalculadoraPagamento.Debito(carrinho.Total), Exemplos.Endereco());
 
         Assert.Equal(StatusPedido.Pago, pedido.Status);
         Assert.Equal(2, Assert.Single(pedido.Itens).Quantidade);
@@ -89,6 +89,6 @@ public class CalculadoraPagamentoTests
         var carrinho = new Carrinho();
         carrinho.AdicionarItem(produto, 2);
 
-        Assert.Throws<DomainException>(() => Pedido.Fechar(carrinho, [produto], CalculadoraPagamento.Debito(99m)));
+        Assert.Throws<DomainException>(() => Pedido.Fechar(carrinho, [produto], CalculadoraPagamento.Debito(99m), Exemplos.Endereco()));
     }
 }

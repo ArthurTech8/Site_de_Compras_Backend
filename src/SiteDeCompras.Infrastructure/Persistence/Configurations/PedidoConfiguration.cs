@@ -13,6 +13,7 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
         builder.Property(p => p.Id).ValueGeneratedNever();
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
         builder.HasIndex(p => p.CriadoEm);
+        builder.HasIndex(p => p.UsuarioId);
         builder.HasOne<Domain.Usuarios.Usuario>()
             .WithMany()
             .HasForeignKey(p => p.UsuarioId)
@@ -31,6 +32,9 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
             pagamento.Property(c => c.ValorParcela).HasPrecision(18, 2);
         });
         builder.Navigation(p => p.Pagamento).IsRequired();
+
+        // Opcional só porque os pedidos de antes da logística não têm endereço.
+        builder.OwnsOne(p => p.EnderecoEntrega, EnderecoMapeamento.Mapear);
 
         builder.HasMany(p => p.Itens)
             .WithOne()
