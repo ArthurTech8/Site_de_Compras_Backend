@@ -55,6 +55,9 @@ o banco ou expor outra interface (fila, gRPC) não mexe nas regras de negócio.
 | POST | `/api/v1/auth/login` | Abre a sessão `{ email, senha }` |
 | POST | `/api/v1/auth/logout` | Encerra a sessão |
 | GET | `/api/v1/conta` | Dados de quem está logado (`401` sem sessão) |
+| GET | `/api/v1/conta/pedidos` | Pedidos da conta, do mais recente para o mais antigo |
+| GET / POST | `/api/v1/conta/enderecos` | Endereços salvos da conta (até 10) |
+| DELETE | `/api/v1/conta/enderecos/{id}` | Apaga um endereço salvo |
 | POST | `/api/v1/carrinhos` | Cria carrinho vazio e devolve o `id` |
 | GET | `/api/v1/carrinhos/{id}` | Itens, quantidade total e valor total |
 | DELETE | `/api/v1/carrinhos/{id}` | Exclui o carrinho |
@@ -63,13 +66,34 @@ o banco ou expor outra interface (fila, gRPC) não mexe nas regras de negócio.
 | DELETE | `/api/v1/carrinhos/{id}/itens/{produtoId}` | Remove o item |
 | DELETE | `/api/v1/carrinhos/{id}/itens` | Esvazia o carrinho |
 | GET | `/api/v1/carrinhos/{id}/pagamento` | Formas de pagamento calculadas sobre o total do carrinho (Pix, débito e crédito de 6x a 16x) |
-| POST | `/api/v1/pedidos` | Finaliza o carrinho `{ carrinhoId, formaPagamento, parcelas }` com pagamento simulado |
+| POST | `/api/v1/pedidos` | Finaliza o carrinho `{ carrinhoId, formaPagamento, parcelas, enderecoEntrega }` com pagamento simulado e abre o envio |
 | GET | `/api/v1/pedidos/{id}` | Detalhe do pedido. Pedido feito com login só aparece para o dono ou um admin |
+| GET | `/api/v1/pedidos/{id}/rastreio` | Envios do pedido com o histórico de cada um (mesma regra de acesso) |
+| GET | `/api/v1/rastreio/{codigo}` | Rastreio público: só cidade de destino, previsão e eventos |
+| GET | `/api/v1/admin/logistica/painel` | Envios por etapa, atrasados, despachos que vencem hoje e entregas de hoje (**equipe**) |
+| GET | `/api/v1/admin/logistica/envios` | Fila de envios. Query: `status`, `atrasados`, `busca`, `pagina`, `tamanhoPagina` (**equipe**) |
+| GET | `/api/v1/admin/logistica/envios/{id}` | Detalhe do envio (**equipe**) |
+| POST | `/api/v1/admin/logistica/envios/{id}/avancar` | Leva o envio para a próxima etapa; o pedido acompanha (**admin, operador do CD, entregador**) |
 | GET | `/health` | Health check (inclui o banco) |
 
 Erros seguem o padrão **ProblemDetails** (`application/problem+json`):
 `400` validação, `401` sem sessão ou login recusado, `403` sem permissão, `404` recurso inexistente,
 `409` e-mail já cadastrado, `422` regra de negócio (ex.: estoque insuficiente), `429` limite de requisições.
+
+## Logística
+
+Cada pedido pago abre um **envio**, separado do pedido como no Mercado Envios, para que um pedido
+possa gerar vários envios no futuro. O envio passa por `AguardandoSeparacao`, `EmSeparacao`,
+`Separado`, `Embalado`, `ProntoParaEnvio` (quando nasce o código de rastreio `SC000000000BR`),
+`Expedido`, `EmTransito`, `SaiuParaEntrega` e `Entregue`, e cada passo grava um evento de rastreio.
+O pedido acompanha: `Pago`, `EmPreparacao`, `Enviado` e `Entregue`.
+
+- **Prazo de despacho**: pago até 12h (Brasília) em dia útil, sai no mesmo dia às 18h; depois, no
+  próximo dia útil.
+- **Previsão de entrega**: o prazo de despacho mais os dias úteis de transporte da região do CEP
+  (tabela fictícia em `CalendarioLogistica`).
+- **Equipe**: os papéis `OperadorCD`, `Entregador` e `Atendimento` se juntam a `Admin`. Todos
+  consultam a logística; só o atendimento não move envios.
 
 ## Segurança
 

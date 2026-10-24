@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SiteDeCompras.Application.Carrinhos;
+using SiteDeCompras.Application.Enderecos;
+using SiteDeCompras.Application.Logistica;
 using SiteDeCompras.Application.Pagamentos;
 using SiteDeCompras.Application.Pedidos;
 using SiteDeCompras.Application.Produtos;
@@ -18,6 +20,8 @@ public static class DependencyInjection
         services.AddScoped<PagamentoService>();
         services.AddScoped<PedidoService>();
         services.AddScoped<AuthService>();
+        services.AddScoped<EnderecoService>();
+        services.AddScoped<LogisticaService>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

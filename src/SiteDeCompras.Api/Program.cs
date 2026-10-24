@@ -35,7 +35,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(policy => policy
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o => Sessao.Configurar(o, builder.Environment.IsDevelopment()));
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(Politicas.Configurar);
 builder.Services.AddLimitesRequisicao(builder.Configuration);
 
 builder.Services.AddApplication(

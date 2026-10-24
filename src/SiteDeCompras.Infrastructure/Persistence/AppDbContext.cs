@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SiteDeCompras.Application.Common;
 using SiteDeCompras.Domain.Carrinhos;
+using SiteDeCompras.Domain.Enderecos;
+using SiteDeCompras.Domain.Logistica;
 using SiteDeCompras.Domain.Pedidos;
 using SiteDeCompras.Domain.Produtos;
 using SiteDeCompras.Domain.Usuarios;
@@ -14,6 +16,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Carrinho> Carrinhos => Set<Carrinho>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Envio> Envios => Set<Envio>();
+    public DbSet<EnderecoSalvo> EnderecosSalvos => Set<EnderecoSalvo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

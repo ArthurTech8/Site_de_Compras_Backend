@@ -29,7 +29,7 @@ public class PedidosDonoTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var carrinho = (await (await client.PostAsync("/api/v1/carrinhos", null)).Content.ReadFromJsonAsync<CarrinhoDto>())!;
         (await client.PostAsJsonAsync($"/api/v1/carrinhos/{carrinho.Id}/itens", new AdicionarItemRequest { ProdutoId = 5 })).EnsureSuccessStatusCode();
         var resposta = await client.PostAsJsonAsync("/api/v1/pedidos",
-            new FecharPedidoRequest { CarrinhoId = carrinho.Id, FormaPagamento = FormaPagamento.Pix }, Json);
+            new FecharPedidoRequest { CarrinhoId = carrinho.Id, FormaPagamento = FormaPagamento.Pix, EnderecoEntrega = Exemplos.EnderecoRequest() }, Json);
         return (await resposta.Content.ReadFromJsonAsync<PedidoDto>(Json))!.Id;
     }
 

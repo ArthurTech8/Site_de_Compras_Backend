@@ -1,5 +1,7 @@
 using SiteDeCompras.Domain.Carrinhos;
 using SiteDeCompras.Domain.Common;
+using SiteDeCompras.Domain.Enderecos;
+using SiteDeCompras.Domain.Logistica;
 using SiteDeCompras.Domain.Pagamentos;
 using SiteDeCompras.Domain.Produtos;
 
@@ -16,6 +18,9 @@ public class Pedido
     /// <summary>Dono do pedido. Nulo quando a compra foi feita sem login.</summary>
     public Guid? UsuarioId { get; private set; }
     public CondicaoPagamento Pagamento { get; private set; } = null!;
+
+    /// <summary>Cópia do endereço no momento da compra. Nulo só em pedidos anteriores à logística.</summary>
+    public Endereco? EnderecoEntrega { get; private set; }
     public IReadOnlyCollection<ItemPedido> Itens => _itens.AsReadOnly();
 
     private Pedido() { }
@@ -25,9 +30,11 @@ public class Pedido
     /// </summary>
     /// <param name="produtos">Os produtos dos itens do carrinho, para baixar o estoque.</param>
     /// <param name="pagamento">Condição calculada sobre o total deste carrinho.</param>
+    /// <param name="enderecoEntrega">Para onde o pedido vai.</param>
     /// <param name="usuarioId">Quem está logado, se houver.</param>
     public static Pedido Fechar(
-        Carrinho carrinho, IReadOnlyCollection<Produto> produtos, CondicaoPagamento pagamento, Guid? usuarioId = null)
+        Carrinho carrinho, IReadOnlyCollection<Produto> produtos, CondicaoPagamento pagamento,
+        Endereco enderecoEntrega, Guid? usuarioId = null)
     {
         if (carrinho.Itens.Count == 0)
             throw new DomainException("O carrinho está vazio.");
@@ -41,6 +48,7 @@ public class Pedido
             Status = StatusPedido.Pago,
             Pagamento = pagamento,
             UsuarioId = usuarioId,
+            EnderecoEntrega = enderecoEntrega.Copiar(),
         };
 
         foreach (var item in carrinho.Itens.OrderBy(i => i.Id))
@@ -61,4 +69,23 @@ public class Pedido
     /// só o dono ou um admin.
     /// </summary>
     public bool PodeSerVistoPor(Guid? usuarioId, bool admin) => admin || UsuarioId is null || UsuarioId == usuarioId;
+
+    /// <summary>
+    /// Acompanha os envios: o pedido fica na etapa do envio mais atrasado, então só aparece como
+    /// entregue quando tudo chegou.
+    /// </summary>
+    public void AcompanharEnvios(IEnumerable<StatusEnvio> envios)
+    {
+        var lista = envios.ToList();
+        if (lista.Count == 0)
+            return;
+
+        Status = lista.Min() switch
+        {
+            StatusEnvio.AguardandoSeparacao => StatusPedido.Pago,
+            StatusEnvio.Entregue => StatusPedido.Entregue,
+            var s when s.NoCentroDeDistribuicao() => StatusPedido.EmPreparacao,
+            _ => StatusPedido.Enviado,
+        };
+    }
 }
