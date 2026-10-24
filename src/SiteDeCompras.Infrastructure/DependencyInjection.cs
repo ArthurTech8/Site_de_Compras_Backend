@@ -5,8 +5,10 @@ using SiteDeCompras.Application.Carrinhos;
 using SiteDeCompras.Application.Common;
 using SiteDeCompras.Application.Pedidos;
 using SiteDeCompras.Application.Produtos;
+using SiteDeCompras.Application.Usuarios;
 using SiteDeCompras.Infrastructure.Persistence;
 using SiteDeCompras.Infrastructure.Repositories;
+using SiteDeCompras.Infrastructure.Seguranca;
 
 namespace SiteDeCompras.Infrastructure;
 
@@ -22,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IProdutoRepository, ProdutoRepository>();
         services.AddScoped<ICarrinhoRepository, CarrinhoRepository>();
         services.AddScoped<IPedidoRepository, PedidoRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddSingleton<IHasherSenha, HasherSenha>();
         return services;
     }
 }

@@ -41,6 +41,8 @@ public class Produto
             throw new DomainException("O estoque não pode ser negativo.");
         if (descontoPix is < DescontoPixMinimo or > DescontoPixMaximo)
             throw new DomainException($"O desconto no Pix deve ficar entre {DescontoPixMinimo}% e {DescontoPixMaximo}%.");
+        if (!ImagemUrlValida(imagemUrl))
+            throw new DomainException("A imagem deve ser um caminho do site (ex.: imagens/foto.webp) ou um endereço http(s).");
 
         Nome = nome.Trim();
         Preco = preco;
@@ -49,6 +51,20 @@ public class Produto
         ImagemUrl = imagemUrl?.Trim();
         DescontoPix = descontoPix;
         AtualizadoEm = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Aceita caminho relativo ou URL http(s). Recusa javascript:, data: e "//outro-site", que o
+    /// navegador trataria como outro protocolo ou outro domínio.
+    /// </summary>
+    public static bool ImagemUrlValida(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return true;
+        url = url.Trim();
+        if (url.StartsWith("//") || url.StartsWith(@"\")) return false;
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluta) && !url.StartsWith('/'))
+            return absoluta.Scheme is "http" or "https";
+        return !url.Contains(':');
     }
 
     /// <summary>Retira do estoque a quantidade vendida.</summary>

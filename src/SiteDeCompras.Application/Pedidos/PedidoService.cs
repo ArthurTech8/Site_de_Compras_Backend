@@ -17,7 +17,7 @@ public class PedidoService(
     /// Fecha o carrinho em um pedido. O pagamento é simulado: os valores são recalculados aqui a
     /// partir do carrinho e a transação é aprovada na hora, sem gateway.
     /// </summary>
-    public async Task<PedidoDto> FecharAsync(FecharPedidoRequest req, CancellationToken ct = default)
+    public async Task<PedidoDto> FecharAsync(FecharPedidoRequest req, Guid? usuarioId = null, CancellationToken ct = default)
     {
         var carrinho = await carrinhos.ObterPorIdAsync(req.CarrinhoId, ct)
             ?? throw new NotFoundException("Carrinho", req.CarrinhoId);
@@ -25,13 +25,21 @@ public class PedidoService(
 
         var pagamento = PagamentoService.Calcular(
             carrinho, produtosDoCarrinho, req.FormaPagamento!.Value, req.Parcelas, config.TaxaJurosMensalCredito);
-        var pedido = Pedido.Fechar(carrinho, produtosDoCarrinho, pagamento);
+        var pedido = Pedido.Fechar(carrinho, produtosDoCarrinho, pagamento, usuarioId);
 
         pedidos.Adicionar(pedido);
         await uow.SalvarAsync(ct);
         return PedidoDto.De(pedido);
     }
 
-    public async Task<PedidoDto> ObterAsync(Guid id, CancellationToken ct = default) =>
-        PedidoDto.De(await pedidos.ObterPorIdAsync(id, ct) ?? throw new NotFoundException("Pedido", id));
+    /// <summary>
+    /// O pedido de outra pessoa responde como inexistente (404), para não confirmar que o id existe.
+    /// </summary>
+    public async Task<PedidoDto> ObterAsync(Guid id, Guid? usuarioId = null, bool admin = false, CancellationToken ct = default)
+    {
+        var pedido = await pedidos.ObterPorIdAsync(id, ct);
+        return pedido is not null && pedido.PodeSerVistoPor(usuarioId, admin)
+            ? PedidoDto.De(pedido)
+            : throw new NotFoundException("Pedido", id);
+    }
 }

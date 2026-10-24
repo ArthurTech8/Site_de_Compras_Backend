@@ -13,6 +13,10 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
         builder.Property(p => p.Id).ValueGeneratedNever();
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
         builder.HasIndex(p => p.CriadoEm);
+        builder.HasOne<Domain.Usuarios.Usuario>()
+            .WithMany()
+            .HasForeignKey(p => p.UsuarioId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // A condição de pagamento fica nas colunas do próprio pedido (Pagamento_Total etc.).
         builder.OwnsOne(p => p.Pagamento, pagamento =>
