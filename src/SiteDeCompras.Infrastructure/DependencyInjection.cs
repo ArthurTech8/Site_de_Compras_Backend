@@ -29,6 +29,9 @@ public static class DependencyInjection
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IEnvioRepository, EnvioRepository>();
         services.AddScoped<IEnderecoRepository, EnderecoRepository>();
+        services.AddScoped<IOndaRepository, OndaRepository>();
+        services.AddScoped<IManifestoRepository, ManifestoRepository>();
+        services.AddScoped<IDivergenciaRepository, DivergenciaRepository>();
         services.AddSingleton<IHasherSenha, HasherSenha>();
         return services;
     }

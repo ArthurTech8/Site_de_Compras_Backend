@@ -32,8 +32,9 @@ public class LogisticaController(LogisticaService service) : ControllerBase
     public Task<EnvioDto> Obter(Guid id, CancellationToken ct) => service.ObterAsync(id, ct);
 
     /// <summary>
-    /// Leva o envio para a próxima etapa. Atalho até existirem as telas de separação, embalagem e
-    /// expedição; o pedido acompanha o envio.
+    /// Leva o envio para a próxima etapa do transporte (da coleta até a entrega), até existir o
+    /// simulador de transporte. Dentro do CD o envio anda pelas rotas de separação, embalagem e
+    /// expedição. O pedido acompanha o envio.
     /// </summary>
     [HttpPost("envios/{id:guid}/avancar")]
     [Authorize(Policy = Politicas.OperarLogistica)]

@@ -54,24 +54,6 @@ public class LogisticaDominioTests
         Assert.Single(envio.Eventos);
     }
 
-    [Fact]
-    public void Avancar_passa_por_todas_as_etapas_e_gera_o_codigo_na_etiqueta()
-    {
-        var envio = Envio.Criar(PedidoPago(), DateTime.UtcNow);
-
-        while (envio.Status != StatusEnvio.Entregue)
-        {
-            envio.Avancar(DateTime.UtcNow);
-            if (envio.Status < StatusEnvio.ProntoParaEnvio)
-                Assert.Null(envio.CodigoRastreio);
-            else
-                Assert.Matches(@"^SC\d{9}BR$", envio.CodigoRastreio);
-        }
-
-        Assert.Equal(Enum.GetValues<StatusEnvio>(), envio.Eventos.Select(e => e.Status));
-        Assert.Throws<DomainException>(() => envio.Avancar(DateTime.UtcNow));
-    }
-
     [Theory]
     [InlineData(StatusEnvio.AguardandoSeparacao, StatusPedido.Pago)]
     [InlineData(StatusEnvio.EmSeparacao, StatusPedido.EmPreparacao)]

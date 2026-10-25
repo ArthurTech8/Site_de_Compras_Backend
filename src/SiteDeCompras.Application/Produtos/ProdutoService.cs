@@ -18,6 +18,7 @@ public class ProdutoService(IProdutoRepository produtos, IUnitOfWork uow)
     public async Task<ProdutoDto> CriarAsync(SalvarProdutoRequest req, CancellationToken ct = default)
     {
         var produto = new Produto(req.Nome, req.Preco, req.Estoque, req.Descricao, req.ImagemUrl, req.DescontoPix);
+        await DefinirDadosLogisticosAsync(produto, req, ct);
         produtos.Adicionar(produto);
         await uow.SalvarAsync(ct);
         return ProdutoDto.De(produto);
@@ -27,6 +28,7 @@ public class ProdutoService(IProdutoRepository produtos, IUnitOfWork uow)
     {
         var produto = await ObterAtivoAsync(id, ct);
         produto.Atualizar(req.Nome, req.Preco, req.Estoque, req.Descricao, req.ImagemUrl, req.DescontoPix);
+        await DefinirDadosLogisticosAsync(produto, req, ct);
         await uow.SalvarAsync(ct);
         return ProdutoDto.De(produto);
     }
@@ -36,6 +38,17 @@ public class ProdutoService(IProdutoRepository produtos, IUnitOfWork uow)
         var produto = await ObterAtivoAsync(id, ct);
         produto.Desativar();
         await uow.SalvarAsync(ct);
+    }
+
+    private async Task DefinirDadosLogisticosAsync(Produto produto, SalvarProdutoRequest req, CancellationToken ct)
+    {
+        if (req.Sku is not null)
+        {
+            var dono = await produtos.ObterPorSkuAsync(Produto.NormalizarSku(req.Sku), ct);
+            if (dono is not null && dono.Id != produto.Id)
+                throw new ConflitoException($"O SKU '{dono.Sku}' já é do produto '{dono.Nome}'.");
+        }
+        produto.DefinirDadosLogisticos(req.Sku, req.PesoGramas, req.AlturaCm, req.LarguraCm, req.ComprimentoCm);
     }
 
     private async Task<Produto> ObterAtivoAsync(int id, CancellationToken ct)

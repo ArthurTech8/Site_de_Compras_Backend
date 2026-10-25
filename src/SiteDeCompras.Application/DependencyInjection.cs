@@ -22,6 +22,11 @@ public static class DependencyInjection
         services.AddScoped<AuthService>();
         services.AddScoped<EnderecoService>();
         services.AddScoped<LogisticaService>();
+        services.AddScoped<AcompanhamentoPedidos>();
+        services.AddScoped<EstoqueService>();
+        services.AddScoped<SeparacaoService>();
+        services.AddScoped<EmbalagemService>();
+        services.AddScoped<ExpedicaoService>();
         services.TryAddSingleton(TimeProvider.System);
         return services;
     }

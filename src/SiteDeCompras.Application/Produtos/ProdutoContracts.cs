@@ -11,11 +11,18 @@ public record ProdutoDto(
     string? ImagemUrl,
     int Estoque,
     decimal DescontoPix,
+    string Sku,
+    int PesoGramas,
+    int AlturaCm,
+    int LarguraCm,
+    int ComprimentoCm,
+    string? LocalEstoque,
     DateTime CriadoEm,
     DateTime AtualizadoEm)
 {
     public static ProdutoDto De(Produto p) =>
-        new(p.Id, p.Nome, p.Descricao, p.Preco, p.ImagemUrl, p.Estoque, p.DescontoPix, p.CriadoEm, p.AtualizadoEm);
+        new(p.Id, p.Nome, p.Descricao, p.Preco, p.ImagemUrl, p.Estoque, p.DescontoPix,
+            p.Sku, p.PesoGramas, p.AlturaCm, p.LarguraCm, p.ComprimentoCm, p.LocalEstoque, p.CriadoEm, p.AtualizadoEm);
 }
 
 public enum OrdenacaoProduto
@@ -68,4 +75,21 @@ public record SalvarProdutoRequest
     /// <summary>Desconto (%) no pagamento via Pix, de 5 a 15.</summary>
     [Range(typeof(decimal), "5", "15", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     public decimal DescontoPix { get; init; } = Produto.DescontoPixMinimo;
+
+    /// <summary>Código bipado no centro de distribuição. Sem ele, um novo produto ganha um SKU gerado e a edição mantém o atual.</summary>
+    [StringLength(30, MinimumLength = 3)]
+    public string? Sku { get; init; }
+
+    /// <summary>Peso e medidas na embalagem do fabricante. Os campos omitidos ficam como estão.</summary>
+    [Range(1, Produto.PesoMaximoGramas)]
+    public int? PesoGramas { get; init; }
+
+    [Range(1, Produto.MedidaMaximaCm)]
+    public int? AlturaCm { get; init; }
+
+    [Range(1, Produto.MedidaMaximaCm)]
+    public int? LarguraCm { get; init; }
+
+    [Range(1, Produto.MedidaMaximaCm)]
+    public int? ComprimentoCm { get; init; }
 }

@@ -17,6 +17,9 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
         builder.Property(p => p.DescontoPix).HasPrecision(5, 2);
         builder.HasIndex(p => p.Nome);
         builder.HasIndex(p => p.Ativo);
+        builder.Property(p => p.Sku).HasMaxLength(30).IsRequired();
+        builder.HasIndex(p => p.Sku).IsUnique();
+        builder.Property(p => p.LocalEstoque).HasMaxLength(8);
 
         builder.HasData(ProdutoSeed.Produtos);
     }
