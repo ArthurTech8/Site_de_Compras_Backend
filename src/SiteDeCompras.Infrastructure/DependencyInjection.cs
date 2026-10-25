@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SiteDeCompras.Application.Carrinhos;
 using SiteDeCompras.Application.Common;
+using SiteDeCompras.Application.Enderecos;
+using SiteDeCompras.Application.Logistica;
 using SiteDeCompras.Application.Pedidos;
 using SiteDeCompras.Application.Produtos;
 using SiteDeCompras.Application.Usuarios;
@@ -25,6 +27,8 @@ public static class DependencyInjection
         services.AddScoped<ICarrinhoRepository, CarrinhoRepository>();
         services.AddScoped<IPedidoRepository, PedidoRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IEnvioRepository, EnvioRepository>();
+        services.AddScoped<IEnderecoRepository, EnderecoRepository>();
         services.AddSingleton<IHasherSenha, HasherSenha>();
         return services;
     }

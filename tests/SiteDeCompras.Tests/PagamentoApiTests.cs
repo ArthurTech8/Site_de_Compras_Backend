@@ -30,7 +30,7 @@ public class PagamentoApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
     private Task<HttpResponseMessage> Fechar(Guid carrinhoId, FormaPagamento forma, int? parcelas = null) =>
         _client.PostAsJsonAsync("/api/v1/pedidos",
-            new FecharPedidoRequest { CarrinhoId = carrinhoId, FormaPagamento = forma, Parcelas = parcelas }, Json);
+            new FecharPedidoRequest { CarrinhoId = carrinhoId, FormaPagamento = forma, Parcelas = parcelas, EnderecoEntrega = Exemplos.EnderecoRequest() }, Json);
 
     [Fact]
     public async Task Opcoes_usam_o_total_do_carrinho_e_o_maior_desconto_pix()

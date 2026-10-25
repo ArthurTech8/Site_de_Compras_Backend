@@ -71,6 +71,102 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                     b.ToTable("ItensCarrinho", (string)null);
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Enderecos.EnderecoSalvo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("EnderecosSalvos", (string)null);
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Envio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AtualizadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CodigoRastreio")
+                        .HasMaxLength(13)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PrazoDespacho")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PrevisaoEntrega")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodigoRastreio")
+                        .IsUnique();
+
+                    b.HasIndex("PedidoId");
+
+                    b.HasIndex("PrazoDespacho");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Envios", (string)null);
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.EventoRastreio", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EnvioId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Local")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnvioId");
+
+                    b.ToTable("EventosRastreio", (string)null);
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.ItemPedido", b =>
                 {
                     b.Property<int>("Id")
@@ -331,6 +427,143 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Enderecos.EnderecoSalvo", b =>
+                {
+                    b.HasOne("SiteDeCompras.Domain.Usuarios.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("SiteDeCompras.Domain.Enderecos.Endereco", "Endereco", b1 =>
+                        {
+                            b1.Property<int>("EnderecoSalvoId")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("Bairro")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Cep")
+                                .IsRequired()
+                                .HasMaxLength(8)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Cidade")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Complemento")
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Destinatario")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Logradouro")
+                                .IsRequired()
+                                .HasMaxLength(150)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Numero")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Uf")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("EnderecoSalvoId");
+
+                            b1.ToTable("EnderecosSalvos");
+
+                            b1.WithOwner()
+                                .HasForeignKey("EnderecoSalvoId");
+                        });
+
+                    b.Navigation("Endereco")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Envio", b =>
+                {
+                    b.HasOne("SiteDeCompras.Domain.Pedidos.Pedido", null)
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsOne("SiteDeCompras.Domain.Enderecos.Endereco", "Destino", b1 =>
+                        {
+                            b1.Property<Guid>("EnvioId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Bairro")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Cep")
+                                .IsRequired()
+                                .HasMaxLength(8)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Cidade")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Complemento")
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Destinatario")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Logradouro")
+                                .IsRequired()
+                                .HasMaxLength(150)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Numero")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Uf")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("EnvioId");
+
+                            b1.ToTable("Envios");
+
+                            b1.WithOwner()
+                                .HasForeignKey("EnvioId");
+                        });
+
+                    b.Navigation("Destino")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.EventoRastreio", b =>
+                {
+                    b.HasOne("SiteDeCompras.Domain.Logistica.Envio", null)
+                        .WithMany("Eventos")
+                        .HasForeignKey("EnvioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.ItemPedido", b =>
                 {
                     b.HasOne("SiteDeCompras.Domain.Pedidos.Pedido", null)
@@ -402,6 +635,60 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("PedidoId");
                         });
 
+                    b.OwnsOne("SiteDeCompras.Domain.Enderecos.Endereco", "EnderecoEntrega", b1 =>
+                        {
+                            b1.Property<Guid>("PedidoId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Bairro")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Cep")
+                                .IsRequired()
+                                .HasMaxLength(8)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Cidade")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Complemento")
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Destinatario")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Logradouro")
+                                .IsRequired()
+                                .HasMaxLength(150)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Numero")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Uf")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("PedidoId");
+
+                            b1.ToTable("Pedidos");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PedidoId");
+                        });
+
+                    b.Navigation("EnderecoEntrega");
+
                     b.Navigation("Pagamento")
                         .IsRequired();
                 });
@@ -409,6 +696,11 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SiteDeCompras.Domain.Carrinhos.Carrinho", b =>
                 {
                     b.Navigation("Itens");
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Envio", b =>
+                {
+                    b.Navigation("Eventos");
                 });
 
             modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.Pedido", b =>
