@@ -12,13 +12,13 @@ public class EnvioRepository(AppDbContext db) : IEnvioRepository
     private static readonly List<StatusEnvio> NoCentro = StatusEnvioExtensions.EtapasNoCentroDeDistribuicao.ToList();
 
     public Task<Envio?> ObterPorIdAsync(Guid id, CancellationToken ct = default) =>
-        db.Envios.Include(e => e.Eventos).FirstOrDefaultAsync(e => e.Id == id, ct);
+        db.Envios.Include(e => e.Eventos).Include(e => e.Itens).FirstOrDefaultAsync(e => e.Id == id, ct);
 
     public Task<Envio?> ObterPorCodigoAsync(string codigoRastreio, CancellationToken ct = default) =>
         db.Envios.AsNoTracking().Include(e => e.Eventos).FirstOrDefaultAsync(e => e.CodigoRastreio == codigoRastreio, ct);
 
     public async Task<IReadOnlyList<Envio>> ListarDoPedidoAsync(Guid pedidoId, CancellationToken ct = default) =>
-        await db.Envios.Include(e => e.Eventos)
+        await db.Envios.Include(e => e.Eventos).Include(e => e.Itens)
             .Where(e => e.PedidoId == pedidoId)
             .OrderBy(e => e.CriadoEm)
             .ToListAsync(ct);
@@ -65,4 +65,44 @@ public class EnvioRepository(AppDbContext db) : IEnvioRepository
         db.Envios.CountAsync(e => e.Status == StatusEnvio.Entregue && e.AtualizadoEm >= inicioUtc && e.AtualizadoEm < fimUtc, ct);
 
     public void Adicionar(Envio envio) => db.Envios.Add(envio);
+
+    public async Task<IReadOnlyList<Envio>> ListarParaOndaAsync(int quantidade, IReadOnlyCollection<int> produtosBloqueados, CancellationToken ct = default)
+    {
+        var bloqueados = produtosBloqueados.ToList();
+        return await db.Envios.Include(e => e.Eventos).Include(e => e.Itens)
+            .Where(e => e.Status == StatusEnvio.AguardandoSeparacao)
+            .Where(e => !e.Itens.Any(i => bloqueados.Contains(i.ProdutoId)))
+            .OrderBy(e => e.PrazoDespacho).ThenBy(e => e.CriadoEm)
+            .Take(quantidade)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Envio>> ListarDaOndaAsync(int ondaId, CancellationToken ct = default) =>
+        await db.Envios.Include(e => e.Eventos).Include(e => e.Itens)
+            .Where(e => e.OndaId == ondaId)
+            .OrderBy(e => e.PrazoDespacho).ThenBy(e => e.CriadoEm)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Envio>> ListarDoManifestoAsync(int manifestoId, CancellationToken ct = default) =>
+        await db.Envios.Include(e => e.Eventos).Include(e => e.Itens)
+            .Where(e => e.ManifestoId == manifestoId)
+            .OrderBy(e => e.CodigoRastreio)
+            .ToListAsync(ct);
+
+    public Task<int> ContarProntosSemManifestoAsync(string transportadora, CancellationToken ct = default) =>
+        db.Envios.CountAsync(e => e.Status == StatusEnvio.ProntoParaEnvio && e.ManifestoId == null && e.Transportadora == transportadora, ct);
+
+    public Task<Envio?> ObterParaAlterarPorCodigoAsync(string codigoRastreio, CancellationToken ct = default) =>
+        db.Envios.Include(e => e.Eventos).Include(e => e.Itens).FirstOrDefaultAsync(e => e.CodigoRastreio == codigoRastreio, ct);
+
+    public async Task<IReadOnlyDictionary<int, int>> ContarReservadoPorProdutoAsync(CancellationToken ct = default)
+    {
+        var naPrateleira = new List<StatusEnvio> { StatusEnvio.AguardandoSeparacao, StatusEnvio.EmSeparacao };
+        return await db.Envios
+            .Where(e => naPrateleira.Contains(e.Status))
+            .SelectMany(e => e.Itens)
+            .GroupBy(i => i.ProdutoId)
+            .Select(g => new { g.Key, Total = g.Sum(i => i.Quantidade - i.QuantidadeSeparada) })
+            .ToDictionaryAsync(g => g.Key, g => g.Total, ct);
+    }
 }

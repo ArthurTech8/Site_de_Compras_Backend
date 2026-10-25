@@ -73,7 +73,27 @@ o banco ou expor outra interface (fila, gRPC) não mexe nas regras de negócio.
 | GET | `/api/v1/admin/logistica/painel` | Envios por etapa, atrasados, despachos que vencem hoje e entregas de hoje (**equipe**) |
 | GET | `/api/v1/admin/logistica/envios` | Fila de envios. Query: `status`, `atrasados`, `busca`, `pagina`, `tamanhoPagina` (**equipe**) |
 | GET | `/api/v1/admin/logistica/envios/{id}` | Detalhe do envio (**equipe**) |
-| POST | `/api/v1/admin/logistica/envios/{id}/avancar` | Leva o envio para a próxima etapa; o pedido acompanha (**admin, operador do CD, entregador**) |
+| POST | `/api/v1/admin/logistica/envios/{id}/avancar` | Leva o envio para a próxima etapa do transporte, depois da coleta; o pedido acompanha (**admin, operador do CD, entregador**) |
+| GET | `/api/v1/admin/logistica/estoque` | Prateleira, disponível, reservado e divergências de cada produto (**equipe**) |
+| PUT | `/api/v1/admin/logistica/estoque/{produtoId}/local` | Muda o produto de prateleira (`A-03-2`) (**CD**) |
+| POST | `/api/v1/admin/logistica/estoque/{produtoId}/inventario` | Registra a contagem e resolve a divergência (**CD**) |
+| GET | `/api/v1/admin/logistica/ondas` | Ondas abertas e as últimas concluídas (**equipe**) |
+| POST | `/api/v1/admin/logistica/ondas` | Gera uma onda com os envios mais urgentes. Corpo opcional: `{ "envios": 10 }` (**CD**) |
+| GET | `/api/v1/admin/logistica/ondas/{id}` | Rota de coleta e envios da onda (**equipe**) |
+| POST | `/api/v1/admin/logistica/ondas/{id}/bipar` | Bipe de um SKU: `{ "codigo": "CAN-0005" }` (**CD**) |
+| POST | `/api/v1/admin/logistica/ondas/{id}/falta` | Produto ausente: `{ "produtoId": 5 }`. Os envios voltam para a fila (**CD**) |
+| POST | `/api/v1/admin/logistica/ondas/{id}/concluir` | Fecha a onda quando tudo foi separado (**CD**) |
+| GET | `/api/v1/admin/logistica/envios/{id}/embalagem` | Itens a conferir, caixa sugerida e pesos esperados (**equipe**) |
+| POST | `/api/v1/admin/logistica/envios/{id}/conferir` | Bipe de um SKU na bancada (**CD**) |
+| POST | `/api/v1/admin/logistica/envios/{id}/embalar` | `{ "caixa": "M", "pesoGramas": 1180 }` (**CD**) |
+| POST/GET | `/api/v1/admin/logistica/envios/{id}/etiqueta` | Gera a etiqueta e o código de rastreio / lê a etiqueta (**CD** / **equipe**) |
+| GET | `/api/v1/admin/logistica/manifestos` | Manifestos na doca, últimos coletados e pacotes prontos fora de manifesto (**equipe**) |
+| POST | `/api/v1/admin/logistica/manifestos` | Abre o manifesto da transportadora (**CD**) |
+| GET | `/api/v1/admin/logistica/manifestos/{id}` | Pacotes do manifesto (**equipe**) |
+| POST | `/api/v1/admin/logistica/manifestos/{id}/pacotes` | Bipe da etiqueta: `{ "codigo": "SC123456789BR" }` (**CD**) |
+| DELETE | `/api/v1/admin/logistica/manifestos/{id}/pacotes/{envioId}` | Tira o pacote do manifesto aberto (**CD**) |
+| POST | `/api/v1/admin/logistica/manifestos/{id}/fechar` | Fecha o manifesto (**CD**) |
+| POST | `/api/v1/admin/logistica/manifestos/{id}/coletar` | Coleta confirmada: todos os pacotes são expedidos (**CD**) |
 | GET | `/health` | Health check (inclui o banco) |
 
 Erros seguem o padrão **ProblemDetails** (`application/problem+json`):
@@ -93,7 +113,30 @@ O pedido acompanha: `Pago`, `EmPreparacao`, `Enviado` e `Entregue`.
 - **Previsão de entrega**: o prazo de despacho mais os dias úteis de transporte da região do CEP
   (tabela fictícia em `CalendarioLogistica`).
 - **Equipe**: os papéis `OperadorCD`, `Entregador` e `Atendimento` se juntam a `Admin`. Todos
-  consultam a logística; só o atendimento não move envios.
+  consultam a logística. **CD** nas rotas acima quer dizer admin ou operador do CD; o entregador só
+  avança o transporte, e o atendimento só consulta.
+
+### Centro de distribuição
+
+Dentro do CD o envio anda pelas telas, não pelo "avançar":
+
+1. **Separação em ondas**: a onda junta os envios mais urgentes (menor prazo de despacho) e monta a
+   rota de coleta pela prateleira (`LocalEstoque`, corredor-módulo-nível). Cada bipe de SKU vai para o
+   envio mais urgente que ainda precisa do produto; com a última unidade, o envio fica `Separado`.
+   Produto ausente: os envios dele voltam para a fila com um evento interno (o cliente não vê) e abre
+   uma **divergência de estoque**. Até o inventário, esses envios não entram em ondas.
+2. **Inventário**: a contagem da prateleira menos as unidades vendidas e ainda não separadas vira o
+   disponível para venda. Se a contagem cobre os pedidos, a divergência é resolvida.
+3. **Embalagem**: o embalador bipa cada unidade, o sistema sugere a menor caixa (P, M, G, GG) onde
+   tudo cabe com 15% de folga, ou volume avulso para produto grande, e a balança precisa ficar a até
+   20% do peso esperado (produtos + caixa). Depois, a etiqueta gera o código de rastreio.
+4. **Expedição**: as etiquetas bipadas entram no manifesto da transportadora (por enquanto só a
+   `Correio Simulado`). Fechado o manifesto, a coleta expede todos os pacotes de uma vez.
+
+O produto ganhou `Sku` (único), `PesoGramas`, `AlturaCm`, `LarguraCm`, `ComprimentoCm` e
+`LocalEstoque`, que entram opcionalmente no `POST`/`PUT` de produtos. A migration
+`CentroDistribuicao` copia os itens dos pedidos para os envios que já existiam e devolve à fila os
+que estavam `EmSeparacao` sem onda.
 
 ## Segurança
 

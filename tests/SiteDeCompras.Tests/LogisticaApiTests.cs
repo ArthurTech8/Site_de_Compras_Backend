@@ -20,52 +20,13 @@ namespace SiteDeCompras.Tests;
 
 public class LogisticaApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
-    private const string Senha = "Bolo-de-fuba-quentinho";
+    private static readonly JsonSerializerOptions Json = FluxoLogistica.Json;
+    private readonly FluxoLogistica _fluxo = new(factory);
 
-    private async Task<(HttpClient Client, string Email)> ClienteLogado()
-    {
-        var client = factory.CreateClient();
-        var email = $"c_{Guid.NewGuid():N}@exemplo.com";
-        (await client.PostAsJsonAsync("/api/v1/auth/cadastro", new CadastroRequest { Nome = "Comprador", Email = email, Senha = Senha }))
-            .EnsureSuccessStatusCode();
-        return (client, email);
-    }
-
-    /// <summary>Cria uma conta, troca o papel direto no banco e entra de novo (trocar o papel derruba a sessão).</summary>
-    private async Task<HttpClient> ClienteComPapel(PapelUsuario papel)
-    {
-        var (_, email) = await ClienteLogado();
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var usuario = await db.Usuarios.SingleAsync(u => u.EmailNormalizado == email);
-            usuario.DefinirPapel(papel);
-            await db.SaveChangesAsync();
-        }
-        var client = factory.CreateClient();
-        (await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest { Email = email, Senha = Senha })).EnsureSuccessStatusCode();
-        return client;
-    }
-
-    // O seed tem 10 unidades de cada produto; alternar entre os 6 evita esgotar um só.
-    private static int _compras;
-
-    private static async Task<PedidoDto> Comprar(HttpClient client)
-    {
-        var produtoId = Interlocked.Increment(ref _compras) % 6 + 1;
-        var carrinho = (await (await client.PostAsync("/api/v1/carrinhos", null)).Content.ReadFromJsonAsync<CarrinhoDto>())!;
-        (await client.PostAsJsonAsync($"/api/v1/carrinhos/{carrinho.Id}/itens", new AdicionarItemRequest { ProdutoId = produtoId })).EnsureSuccessStatusCode();
-        var resposta = await client.PostAsJsonAsync("/api/v1/pedidos", new FecharPedidoRequest
-        {
-            CarrinhoId = carrinho.Id, FormaPagamento = FormaPagamento.Pix, EnderecoEntrega = Exemplos.EnderecoRequest(),
-        }, Json);
-        Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
-        return (await resposta.Content.ReadFromJsonAsync<PedidoDto>(Json))!;
-    }
-
-    private static async Task<EnvioDto> EnvioDoPedido(HttpClient client, Guid pedidoId) =>
-        Assert.Single((await client.GetFromJsonAsync<List<EnvioDto>>($"/api/v1/pedidos/{pedidoId}/rastreio", Json))!);
+    private Task<(HttpClient Client, string Email)> ClienteLogado() => _fluxo.ClienteLogado();
+    private Task<HttpClient> ClienteComPapel(PapelUsuario papel) => _fluxo.ClienteComPapel(papel);
+    private Task<PedidoDto> Comprar(HttpClient client) => _fluxo.Comprar(client);
+    private static Task<EnvioDto> EnvioDoPedido(HttpClient client, Guid pedidoId) => FluxoLogistica.EnvioDoPedido(client, pedidoId);
 
     [Fact]
     public async Task Pedido_pago_abre_um_envio_na_fila_com_o_endereco()
@@ -97,31 +58,33 @@ public class LogisticaApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Operador_leva_o_envio_ate_a_entrega_e_o_pedido_acompanha()
+    public async Task Envio_passa_pelo_cd_e_pelo_transporte_e_o_pedido_acompanha()
     {
         var (cliente, _) = await ClienteLogado();
         var pedido = await Comprar(cliente);
         var envioId = (await EnvioDoPedido(cliente, pedido.Id)).Id;
         var operador = await ClienteComPapel(PapelUsuario.OperadorCD);
+        async Task<StatusPedido> StatusDoPedido() => (await cliente.GetFromJsonAsync<PedidoDto>($"/api/v1/pedidos/{pedido.Id}", Json))!.Status;
 
-        var esperado = new Dictionary<StatusEnvio, StatusPedido>
-        {
-            [StatusEnvio.EmSeparacao] = StatusPedido.EmPreparacao,
-            [StatusEnvio.ProntoParaEnvio] = StatusPedido.EmPreparacao,
-            [StatusEnvio.EmTransito] = StatusPedido.Enviado,
-            [StatusEnvio.Entregue] = StatusPedido.Entregue,
-        };
+        // Dentro do CD o atalho não vale: o envio anda pelas telas.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,
+            (await operador.PostAsync($"/api/v1/admin/logistica/envios/{envioId}/avancar", null)).StatusCode);
+
+        await FluxoLogistica.Separar(operador, envioId);
+        Assert.Equal(StatusPedido.EmPreparacao, await StatusDoPedido());
+        var etiqueta = await FluxoLogistica.EmbalarEEtiquetar(operador, envioId);
+        Assert.Equal(StatusPedido.EmPreparacao, await StatusDoPedido());
+        await FluxoLogistica.Expedir(operador, etiqueta.CodigoRastreio);
+        Assert.Equal(StatusPedido.Enviado, await StatusDoPedido());
+
         EnvioDto envio;
         do
         {
-            var resposta = await operador.PostAsync($"/api/v1/admin/logistica/envios/{envioId}/avancar", null);
-            Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
-            envio = (await resposta.Content.ReadFromJsonAsync<EnvioDto>(Json))!;
-            if (esperado.TryGetValue(envio.Status, out var statusPedido))
-                Assert.Equal(statusPedido, (await cliente.GetFromJsonAsync<PedidoDto>($"/api/v1/pedidos/{pedido.Id}", Json))!.Status);
+            envio = await FluxoLogistica.Ler<EnvioDto>(await operador.PostAsync($"/api/v1/admin/logistica/envios/{envioId}/avancar", null));
         } while (envio.Status != StatusEnvio.Entregue);
 
-        Assert.Equal(9, envio.Eventos.Count);
+        Assert.Equal(StatusPedido.Entregue, await StatusDoPedido());
+        Assert.Equal(Enum.GetValues<StatusEnvio>(), envio.Eventos.Select(e => e.Status));
         Assert.Equal(HttpStatusCode.UnprocessableEntity,
             (await operador.PostAsync($"/api/v1/admin/logistica/envios/{envioId}/avancar", null)).StatusCode);
     }
@@ -133,9 +96,7 @@ public class LogisticaApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var pedido = await Comprar(cliente);
         var envioId = (await EnvioDoPedido(cliente, pedido.Id)).Id;
         var admin = await factory.ClienteAdminAsync();
-        for (var i = 0; i < 4; i++) // até ProntoParaEnvio, quando nasce o código
-            (await admin.PostAsync($"/api/v1/admin/logistica/envios/{envioId}/avancar", null)).EnsureSuccessStatusCode();
-        var codigo = (await EnvioDoPedido(cliente, pedido.Id)).CodigoRastreio!;
+        var codigo = (await FluxoLogistica.LevarAteProntoParaEnvio(admin, envioId)).CodigoRastreio;
 
         var resposta = await factory.CreateClient().GetAsync($"/api/v1/rastreio/{codigo.ToLowerInvariant()}");
 
@@ -158,12 +119,13 @@ public class LogisticaApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, (await outro.GetAsync($"/api/v1/pedidos/{pedido.Id}/rastreio")).StatusCode);
     }
 
+    // O 422 do "avançar" é de quem tem permissão: o envio ainda está no CD.
     [Theory]
-    [InlineData(PapelUsuario.Cliente, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden)]
-    [InlineData(PapelUsuario.Atendimento, HttpStatusCode.OK, HttpStatusCode.Forbidden)]
-    [InlineData(PapelUsuario.OperadorCD, HttpStatusCode.OK, HttpStatusCode.OK)]
-    [InlineData(PapelUsuario.Entregador, HttpStatusCode.OK, HttpStatusCode.OK)]
-    public async Task Papeis_da_logistica(PapelUsuario papel, HttpStatusCode consultar, HttpStatusCode avancar)
+    [InlineData(PapelUsuario.Cliente, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden)]
+    [InlineData(PapelUsuario.Atendimento, HttpStatusCode.OK, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden)]
+    [InlineData(PapelUsuario.OperadorCD, HttpStatusCode.OK, HttpStatusCode.UnprocessableEntity, HttpStatusCode.Created)]
+    [InlineData(PapelUsuario.Entregador, HttpStatusCode.OK, HttpStatusCode.UnprocessableEntity, HttpStatusCode.Forbidden)]
+    public async Task Papeis_da_logistica(PapelUsuario papel, HttpStatusCode consultar, HttpStatusCode avancar, HttpStatusCode gerarOnda)
     {
         var (cliente, _) = await ClienteLogado();
         var pedido = await Comprar(cliente);
@@ -171,7 +133,9 @@ public class LogisticaApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var client = await ClienteComPapel(papel);
 
         Assert.Equal(consultar, (await client.GetAsync("/api/v1/admin/logistica/envios")).StatusCode);
+        Assert.Equal(consultar, (await client.GetAsync("/api/v1/admin/logistica/estoque")).StatusCode);
         Assert.Equal(avancar, (await client.PostAsync($"/api/v1/admin/logistica/envios/{envioId}/avancar", null)).StatusCode);
+        Assert.Equal(gerarOnda, (await client.PostAsync("/api/v1/admin/logistica/ondas", null)).StatusCode);
     }
 
     [Fact]

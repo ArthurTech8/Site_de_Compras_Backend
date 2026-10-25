@@ -4,7 +4,13 @@ using SiteDeCompras.Domain.Logistica;
 
 namespace SiteDeCompras.Application.Logistica;
 
-public class LogisticaService(IEnvioRepository envios, IPedidoRepository pedidos, IUnitOfWork uow, TimeProvider relogio)
+public class LogisticaService(
+    IEnvioRepository envios,
+    IPedidoRepository pedidos,
+    IDivergenciaRepository divergencias,
+    AcompanhamentoPedidos acompanhamento,
+    IUnitOfWork uow,
+    TimeProvider relogio)
 {
     private DateTime Agora => relogio.GetUtcNow().UtcDateTime;
 
@@ -17,21 +23,20 @@ public class LogisticaService(IEnvioRepository envios, IPedidoRepository pedidos
     }
 
     public async Task<EnvioDto> ObterAsync(Guid id, CancellationToken ct = default) =>
-        EnvioDto.De(await envios.ObterPorIdAsync(id, ct) ?? throw new NotFoundException("Envio", id), Agora);
+        EnvioDto.De(await envios.ObterPorIdAsync(id, ct) ?? throw new NotFoundException("Envio", id), Agora, comInternos: true);
 
-    /// <summary>Leva o envio à próxima etapa e atualiza o status do pedido junto, na mesma transação.</summary>
+    /// <summary>
+    /// Leva o envio à próxima etapa do transporte e atualiza o status do pedido junto, na mesma
+    /// transação.
+    /// </summary>
     public async Task<EnvioDto> AvancarAsync(Guid id, CancellationToken ct = default)
     {
         var agora = Agora;
         var envio = await envios.ObterPorIdAsync(id, ct) ?? throw new NotFoundException("Envio", id);
         envio.Avancar(agora);
-
-        var pedido = await pedidos.ObterPorIdAsync(envio.PedidoId, ct) ?? throw new NotFoundException("Pedido", envio.PedidoId);
-        var doPedido = await envios.ListarDoPedidoAsync(pedido.Id, ct);
-        pedido.AcompanharEnvios(doPedido.Select(e => e.Status));
-
+        await acompanhamento.AtualizarAsync([envio], ct);
         await uow.SalvarAsync(ct);
-        return EnvioDto.De(envio, agora);
+        return EnvioDto.De(envio, agora, comInternos: true);
     }
 
     public async Task<PainelLogisticaDto> PainelAsync(CancellationToken ct = default)
@@ -46,7 +51,8 @@ public class LogisticaService(IEnvioRepository envios, IPedidoRepository pedidos
             completo,
             atrasados,
             await envios.ContarNoCentroComPrazoAteAsync(fimDoDia, ct) - atrasados,
-            await envios.ContarEntreguesEntreAsync(inicioDoDia, fimDoDia, ct));
+            await envios.ContarEntreguesEntreAsync(inicioDoDia, fimDoDia, ct),
+            (await divergencias.ListarAbertasAsync(ct)).Count);
     }
 
     /// <summary>Envios do pedido, com a mesma regra de quem pode ver o pedido.</summary>

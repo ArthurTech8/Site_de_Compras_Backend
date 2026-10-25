@@ -90,6 +90,34 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                     b.ToTable("EnderecosSalvos", (string)null);
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Estoque.DivergenciaEstoque", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CriadaEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("OndaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ResolvidaEm")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProdutoId", "ResolvidaEm");
+
+                    b.ToTable("DivergenciasEstoque", (string)null);
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Envio", b =>
                 {
                     b.Property<Guid>("Id")
@@ -105,6 +133,12 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ManifestoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("OndaId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("PedidoId")
                         .HasColumnType("TEXT");
 
@@ -119,10 +153,18 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Transportadora")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CodigoRastreio")
                         .IsUnique();
+
+                    b.HasIndex("ManifestoId");
+
+                    b.HasIndex("OndaId");
 
                     b.HasIndex("PedidoId");
 
@@ -155,6 +197,9 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("Publico")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -165,6 +210,97 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                     b.HasIndex("EnvioId");
 
                     b.ToTable("EventosRastreio", (string)null);
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.ItemEnvio", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("EnvioId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NomeProduto")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("QuantidadeConferida")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("QuantidadeSeparada")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnvioId");
+
+                    b.HasIndex("ProdutoId");
+
+                    b.ToTable("ItensEnvio", (string)null);
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Manifesto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ColetadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Transportadora")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Manifestos", (string)null);
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.OndaSeparacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ConcluidaEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CriadaEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("OndasSeparacao", (string)null);
                 });
 
             modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.ItemPedido", b =>
@@ -235,11 +371,17 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("AlturaCm")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("Ativo")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("ComprimentoCm")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("TEXT");
@@ -259,14 +401,29 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("LarguraCm")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LocalEstoque")
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("PesoGramas")
+                        .HasColumnType("INTEGER");
+
                     b.Property<double>("Preco")
                         .HasPrecision(18, 2)
                         .HasColumnType("REAL");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -274,80 +431,119 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Nome");
 
+                    b.HasIndex("Sku")
+                        .IsUnique();
+
                     b.ToTable("Produtos", (string)null);
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            AlturaCm = 175,
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ComprimentoCm = 72,
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             DescontoPix = 10.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/Geladeira.webp",
+                            LarguraCm = 65,
+                            LocalEstoque = "D-01-1",
                             Nome = "Geladeira",
-                            Preco = 2300.0
+                            PesoGramas = 68000,
+                            Preco = 2300.0,
+                            Sku = "GEL-0001"
                         },
                         new
                         {
                             Id = 2,
+                            AlturaCm = 90,
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ComprimentoCm = 210,
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             DescontoPix = 8.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/sofa3lugares.webp",
+                            LarguraCm = 95,
+                            LocalEstoque = "D-02-1",
                             Nome = "Sofá 3 lugares",
-                            Preco = 2459.0
+                            PesoGramas = 52000,
+                            Preco = 2459.0,
+                            Sku = "SOF-0002"
                         },
                         new
                         {
                             Id = 3,
+                            AlturaCm = 6,
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ComprimentoCm = 18,
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             DescontoPix = 12.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/celularxaiomi.webp",
+                            LarguraCm = 10,
+                            LocalEstoque = "A-01-2",
                             Nome = "Celular Xiaomi",
-                            Preco = 2189.9000000000001
+                            PesoGramas = 420,
+                            Preco = 2189.9000000000001,
+                            Sku = "CEL-0003"
                         },
                         new
                         {
                             Id = 4,
+                            AlturaCm = 7,
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ComprimentoCm = 42,
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             DescontoPix = 15.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/notebook.webp",
+                            LarguraCm = 30,
+                            LocalEstoque = "A-02-1",
                             Nome = "Notebook",
-                            Preco = 4589.0
+                            PesoGramas = 2600,
+                            Preco = 4589.0,
+                            Sku = "NTB-0004"
                         },
                         new
                         {
                             Id = 5,
+                            AlturaCm = 11,
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ComprimentoCm = 13,
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             DescontoPix = 5.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/caneca.webp",
+                            LarguraCm = 11,
+                            LocalEstoque = "A-03-2",
                             Nome = "Caneca",
-                            Preco = 59.0
+                            PesoGramas = 450,
+                            Preco = 59.0,
+                            Sku = "CAN-0005"
                         },
                         new
                         {
                             Id = 6,
+                            AlturaCm = 11,
                             Ativo = true,
                             AtualizadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ComprimentoCm = 40,
                             CriadoEm = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             DescontoPix = 7.0,
                             Estoque = 10,
                             ImagemUrl = "imagens/ps4.webp",
+                            LarguraCm = 33,
+                            LocalEstoque = "B-11-1",
                             Nome = "Playstation 4",
-                            Preco = 2229.8899999999999
+                            PesoGramas = 3400,
+                            Preco = 2229.8899999999999,
+                            Sku = "PS4-0006"
                         });
                 });
 
@@ -491,8 +687,27 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SiteDeCompras.Domain.Estoque.DivergenciaEstoque", b =>
+                {
+                    b.HasOne("SiteDeCompras.Domain.Produtos.Produto", null)
+                        .WithMany()
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Envio", b =>
                 {
+                    b.HasOne("SiteDeCompras.Domain.Logistica.Manifesto", null)
+                        .WithMany()
+                        .HasForeignKey("ManifestoId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SiteDeCompras.Domain.Logistica.OndaSeparacao", null)
+                        .WithMany()
+                        .HasForeignKey("OndaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SiteDeCompras.Domain.Pedidos.Pedido", null)
                         .WithMany()
                         .HasForeignKey("PedidoId")
@@ -551,14 +766,60 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("EnvioId");
                         });
 
+                    b.OwnsOne("SiteDeCompras.Domain.Logistica.Pacote", "Pacote", b1 =>
+                        {
+                            b1.Property<Guid>("EnvioId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("AlturaCm")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PacoteAlturaCm");
+
+                            b1.Property<string>("Caixa")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("PacoteCaixa");
+
+                            b1.Property<int>("ComprimentoCm")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PacoteComprimentoCm");
+
+                            b1.Property<int>("LarguraCm")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PacoteLarguraCm");
+
+                            b1.Property<int>("PesoGramas")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PacotePesoGramas");
+
+                            b1.HasKey("EnvioId");
+
+                            b1.ToTable("Envios");
+
+                            b1.WithOwner()
+                                .HasForeignKey("EnvioId");
+                        });
+
                     b.Navigation("Destino")
                         .IsRequired();
+
+                    b.Navigation("Pacote");
                 });
 
             modelBuilder.Entity("SiteDeCompras.Domain.Logistica.EventoRastreio", b =>
                 {
                     b.HasOne("SiteDeCompras.Domain.Logistica.Envio", null)
                         .WithMany("Eventos")
+                        .HasForeignKey("EnvioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SiteDeCompras.Domain.Logistica.ItemEnvio", b =>
+                {
+                    b.HasOne("SiteDeCompras.Domain.Logistica.Envio", null)
+                        .WithMany("Itens")
                         .HasForeignKey("EnvioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -701,6 +962,8 @@ namespace SiteDeCompras.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SiteDeCompras.Domain.Logistica.Envio", b =>
                 {
                     b.Navigation("Eventos");
+
+                    b.Navigation("Itens");
                 });
 
             modelBuilder.Entity("SiteDeCompras.Domain.Pedidos.Pedido", b =>

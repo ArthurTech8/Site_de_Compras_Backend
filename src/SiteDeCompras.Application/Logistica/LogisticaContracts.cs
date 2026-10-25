@@ -4,9 +4,9 @@ using SiteDeCompras.Domain.Logistica;
 
 namespace SiteDeCompras.Application.Logistica;
 
-public record EventoRastreioDto(DateTime Data, StatusEnvio Status, string Descricao, string Local)
+public record EventoRastreioDto(DateTime Data, StatusEnvio Status, string Descricao, string Local, bool Publico)
 {
-    public static EventoRastreioDto De(EventoRastreio e) => new(e.Data, e.Status, e.Descricao, e.Local);
+    public static EventoRastreioDto De(EventoRastreio e) => new(e.Data, e.Status, e.Descricao, e.Local, e.Publico);
 }
 
 /// <summary>O envio completo, para o dono do pedido e para a equipe da loja.</summary>
@@ -23,10 +23,11 @@ public record EnvioDto(
     bool Atrasado,
     IReadOnlyList<EventoRastreioDto> Eventos)
 {
-    public static EnvioDto De(Envio e, DateTime agoraUtc) => new(
+    /// <param name="comInternos">Inclui os eventos que só a equipe vê, como a falta de um item na prateleira.</param>
+    public static EnvioDto De(Envio e, DateTime agoraUtc, bool comInternos = false) => new(
         e.Id, e.PedidoId, e.CodigoRastreio, e.Status, EnderecoDto.De(e.Destino), e.CriadoEm, e.AtualizadoEm,
         e.PrazoDespacho, e.PrevisaoEntrega, e.Atrasado(agoraUtc),
-        e.Eventos.OrderBy(ev => ev.Data).ThenBy(ev => ev.Id).Select(EventoRastreioDto.De).ToList());
+        e.Eventos.Where(ev => ev.Publico || comInternos).OrderBy(ev => ev.Data).ThenBy(ev => ev.Id).Select(EventoRastreioDto.De).ToList());
 }
 
 /// <summary>Uma linha da fila de envios do back-office.</summary>
@@ -63,14 +64,15 @@ public record RastreioPublicoDto(
 {
     public static RastreioPublicoDto De(Envio e) => new(
         e.CodigoRastreio!, e.Status, e.Destino.Cidade, e.Destino.Uf, e.PrevisaoEntrega,
-        e.Eventos.OrderBy(ev => ev.Data).ThenBy(ev => ev.Id).Select(EventoRastreioDto.De).ToList());
+        e.Eventos.Where(ev => ev.Publico).OrderBy(ev => ev.Data).ThenBy(ev => ev.Id).Select(EventoRastreioDto.De).ToList());
 }
 
 public record PainelLogisticaDto(
     IReadOnlyDictionary<StatusEnvio, int> PorStatus,
     int Atrasados,
     int DespachoVenceHoje,
-    int EntreguesHoje);
+    int EntreguesHoje,
+    int DivergenciasAbertas);
 
 public class EnvioFiltro
 {

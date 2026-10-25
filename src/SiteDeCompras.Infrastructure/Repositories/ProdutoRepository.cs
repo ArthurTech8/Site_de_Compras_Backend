@@ -48,5 +48,11 @@ public class ProdutoRepository(AppDbContext db) : IProdutoRepository
         return new PagedResult<Produto>(itens, filtro.Pagina, filtro.TamanhoPagina, total);
     }
 
+    public Task<Produto?> ObterPorSkuAsync(string sku, CancellationToken ct = default) =>
+        db.Produtos.FirstOrDefaultAsync(p => p.Sku == sku, ct);
+
+    public async Task<IReadOnlyList<Produto>> ListarAtivosAsync(CancellationToken ct = default) =>
+        await db.Produtos.Where(p => p.Ativo).OrderBy(p => p.LocalEstoque == null).ThenBy(p => p.LocalEstoque).ThenBy(p => p.Nome).ToListAsync(ct);
+
     public void Adicionar(Produto produto) => db.Produtos.Add(produto);
 }
