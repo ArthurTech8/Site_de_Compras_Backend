@@ -37,7 +37,7 @@ public static class LimitesRequisicao
         });
     }
 
-    // Atrás de um proxy reverso, configure ForwardedHeaders para que este seja o IP real do cliente.
+    // Atrás de um proxy reverso, ligue ProxyReverso:Habilitado (Program.cs) para que este seja o IP real do cliente.
     private static string Ip(HttpContext http) => http.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
 
     private static FixedWindowRateLimiterOptions Janela(int limite) => new()

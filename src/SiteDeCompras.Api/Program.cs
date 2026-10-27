@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SiteDeCompras.Api.Infrastructure;
 using SiteDeCompras.Api.Seguranca;
@@ -38,11 +39,28 @@ builder.Services
 builder.Services.AddAuthorization(Politicas.Configurar);
 builder.Services.AddLimitesRequisicao(builder.Configuration);
 
+// Atrás do nginx (docker-compose) a API só é alcançável pela rede interna do Docker, então dá
+// para confiar no X-Forwarded-For/Proto que ele manda: o limite por IP passa a ver o cliente
+// real, e não o IP do proxy para todo mundo.
+var atrasDeProxy = builder.Configuration.GetValue<bool>("ProxyReverso:Habilitado");
+if (atrasDeProxy)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.KnownNetworks.Clear();
+        o.KnownProxies.Clear();
+    });
+}
+
 builder.Services.AddApplication(
     builder.Configuration.GetSection("Pagamento").Get<ConfiguracaoPagamento>());
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+if (atrasDeProxy)
+    app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

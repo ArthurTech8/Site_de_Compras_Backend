@@ -27,6 +27,19 @@ Em desenvolvimento o banco `site_de_compras.db` é criado e populado sozinho com
 dotnet test   # testes de domínio e de integração da API
 ```
 
+## Docker
+
+O `Dockerfile` gera a imagem da API (runtime ASP.NET 8, usuário sem privilégios, porta 8080).
+O jeito mais simples de rodar é pelo `docker-compose.yml` do [repositório do site](https://github.com/ArthurTech8/site_de_compras),
+que sobe a API junto com o frontend servido por nginx. Na imagem já vêm ligados:
+
+- `Banco__AplicarMigrationsNaInicializacao=true`: as migrations rodam ao subir e o banco é populado.
+- `ConnectionStrings__Default=Data Source=/app/data/site_de_compras.db`: o SQLite fica em `/app/data` (volume).
+- `ProxyReverso__Habilitado=true`: a API confia no `X-Forwarded-For` do nginx, para o limite por IP ver o cliente real.
+  Só ligue isso quando a API não estiver exposta direto à internet.
+
+O admin vem de `AdminInicial__Email` e `AdminInicial__Senha` (variáveis de ambiente).
+
 ## Arquitetura
 
 ```
